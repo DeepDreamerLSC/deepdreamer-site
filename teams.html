@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080912">
+  <title>智能体协作 · 每一步看得见 — DeepDreamer</title>
+  <meta name="description" content="了解一个任务从需求、方案、开发到审查与交付的过程，核对进展、结果与限制。">
+  <meta property="og:title" content="智能体协作 · 每一步看得见 — DeepDreamer">
+  <meta property="og:description" content="了解一个任务从需求、方案、开发到审查与交付的过程，核对进展、结果与限制。">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <script defer src="assets/site.js"></script>
+  <script defer src="assets/field.js"></script>
+  <script defer src="assets/demos.js"></script>
+</head>
+<body class="detail-page teams-page">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div id="top-progress" aria-hidden="true"></div>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html" aria-label="DeepDreamer 首页"><i class="brand-mark" aria-hidden="true">D_</i><span>DeepDreamer</span></a>
+      <nav class="product-nav" aria-label="产品导航"><a href="lecturer.html">小讲师</a><a href="finance.html">个人记账</a><a href="teams.html" aria-current="page">智能体协作</a><a href="explorations.html">探索</a><a href="index.html#contact">合作</a></nav>
+      <button class="theme-toggle" data-theme aria-label="切换昼间主题">☀</button>
+    </div>
+  </header>
+  <main id="main" tabindex="-1">
+    <section class="detail-hero wrap"><div class="detail-copy"><a class="back-link" href="index.html">← 所有项目</a><span class="eyebrow">MY AGENT TEAMS / VISIBLE DELIVERY</span><h1>AI 做到哪一步，<br><em>你看得见。</em></h1><p>任务交给 AI 后，进展不必只靠一句“完成了”。从需求到交付，看看做了什么、检查过什么、还剩哪些限制。</p><div class="hero-actions"><a class="btn-primary" href="#experience">亲手体验 <span aria-hidden="true">↘</span></a><span class="status">协作工具 · 流程示意</span></div></div><div class="field-panel"><div class="field-toolbar"><span>AGENT TEAMS / SIGNAL FIELD</span><button id="motion-toggle" aria-pressed="false">暂停动态 Ⅱ</button></div><div class="field-viewport"><canvas id="field-canvas" data-scene="2" role="img" aria-label="AGENT TEAMS 的动态粒子图形">动态粒子图形</canvas><span class="field-note" aria-hidden="true">MOVE TO EXPLORE ↗</span></div></div></section><section class="context-section wrap reveal"><span class="eyebrow">DESIGNED AROUND THE TASK</span><h2>把过程与结果，放到同一条线上。</h2><div class="benefits"><article><span class="benefit-number">01</span><h3>开始前，先对齐</h3><p>把问题、使用场景与完成标准说清楚。</p></article><article><span class="benefit-number">02</span><h3>执行中，有迹可循</h3><p>记录每次改动与检查结果，让进展可以核对。</p></article><article><span class="benefit-number">03</span><h3>交付时，说清边界</h3><p>交付内容、使用说明和已知限制一起呈现。</p></article></div></section>    <section class="chapter wrap" id="teams"><div class="experience-heading reveal" id="experience"><span class="eyebrow">TRY THE INTERACTION</span><h2>跟着一个任务，走过五个阶段。</h2><p>下面是固定示例，用来体验关键交互。</p></div>      <div class="theater-zone"><div class="theater-pin reveal"><div class="demo-shell team-demo"><div class="demo-top"><div class="demo-dots"><i></i><i></i><i></i></div><span>可交互演示 · 智能体协作</span></div><div class="team-gallery"><div class="team-rail" role="group" aria-label="交付流程"><button class="team-step active" data-step="0" data-label="REQUIREMENT" aria-pressed="true"><span class="step-name">需求</span></button><button class="team-step" data-step="1" data-label="DESIGN" aria-pressed="false"><span class="step-name">方案</span></button><button class="team-step" data-step="2" data-label="BUILD" aria-pressed="false"><span class="step-name">开发</span></button><button class="team-step" data-step="3" data-label="REVIEW" aria-pressed="false"><span class="step-name">审查</span></button><button class="team-step" data-step="4" data-label="DELIVERY" aria-pressed="false"><span class="step-name">交付</span></button></div><div class="gallery-clip"><div class="gallery-track" id="gallery-track"><article class="stage-card is-active"><span class="stage-label">REQUIREMENT</span><h4>先说清楚问题，<br />再开始执行。</h4><p>先对齐要帮谁解决什么问题，以及做到什么才算完成。</p><div class="evidence"><strong>你可以核对</strong><div class="evidence-row"><i>✓</i><span>要解决的问题与使用者</span></div><div class="evidence-row"><i>✓</i><span>一个具体的使用场景</span></div><div class="evidence-row"><i>✓</i><span>双方可以核对的完成标准</span></div></div></article><article class="stage-card"><span class="stage-label">DESIGN</span><h4>先看清方案，<br />再决定怎么做。</h4><p>说明为什么选这条路径，哪些先做，哪些暂时留到下一步。</p><div class="evidence"><strong>你可以核对</strong><div class="evidence-row"><i>✓</i><span>方案选择与理由</span></div><div class="evidence-row"><i>✓</i><span>功能范围与数据使用</span></div><div class="evidence-row"><i>✓</i><span>需要先验证的问题</span></div></div></article><article class="stage-card"><span class="stage-label">BUILD</span><h4>看得到进展，<br />也核对得到结果。</h4><p>每次改动保留版本与检查记录，方便核对具体做了什么。</p><div class="evidence"><strong>你可以核对</strong><div class="evidence-row"><i>✓</i><span>本次改动与对应版本</span></div><div class="evidence-row"><i>✓</i><span>关键功能的测试结果</span></div><div class="evidence-row"><i>✓</i><span>运行与质量检查记录</span></div></div></article><article class="stage-card"><span class="stage-label">REVIEW</span><h4>做出来之后，<br />用起来再检查。</h4><p>检查实际操作、使用体验和异常情况，把发现的问题留在交付之前。</p><div class="evidence"><strong>你可以核对</strong><div class="evidence-row"><i>✓</i><span>发现的问题与修复记录</span></div><div class="evidence-row"><i>✓</i><span>实际操作与体验反馈</span></div><div class="evidence-row"><i>✓</i><span>复查结果与对应版本</span></div></div></article><article class="stage-card"><span class="stage-label">DELIVERY</span><h4>交付什么，<br />边界说清楚。</h4><p>完成了哪些功能、怎样使用、哪些仍有限制，都随结果一起交付。</p><div class="evidence"><strong>你可以核对</strong><div class="evidence-row"><i>✓</i><span>功能检查结论</span></div><div class="evidence-row"><i>✓</i><span>交付内容与使用说明</span></div><div class="evidence-row"><i>✓</i><span>已知限制与后续事项</span></div></div></article></div></div><div class="gallery-meter"><span class="gallery-meter-label">滚动浏览五个阶段 · SCROLL</span><div class="gallery-progress" aria-hidden="true"><i id="gallery-progress"></i></div></div></div></div>
+      <div class="demo-caption"><span>示意交互，不代表实时项目状态。</span><b>让协作过程可见，让交付有据可查。</b></div></div></div></section>    <section class="boundary wrap reveal"><div><span class="eyebrow">CURRENT STAGE</span><h2>这是交付流程示意，<br>不是实时任务看板。</h2><p>五个阶段用来介绍协作方式。真实任务的进度、审查结论与质量记录，应以实际项目中的证据为准。</p></div><ul><li>可以点击阶段，或横向滑动浏览。</li><li>不读取真实任务和项目代码。</li><li>演示中的阶段不代表当前项目已经完成。</li></ul></section>
+    <section class="next-step wrap"><h2>这个场景，和你的需求相似吗？</h2><a class="text-link" href="index.html#contact">从一个具体任务开始聊 ↗</a><a class="text-link muted" href="index.html">看看其他项目 →</a></section>
+  </main>
+  <footer class="footer"><div class="wrap"><a class="brand" href="index.html">DeepDreamer<span class="brand-slash"> / Lab</span></a><span>AI 产品设计、开发与持续验证</span><a href="index.html#contact">从你的场景开始 ↗</a></div></footer>
+</body>
+</html>

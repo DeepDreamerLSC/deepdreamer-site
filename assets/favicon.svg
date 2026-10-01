@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="13" fill="#080912"/>
+  <path d="M0 13Q0 0 13 0H38L64 26V51Q64 64 51 64H13Q0 64 0 51Z" fill="#171927"/>
+  <text x="11" y="45" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-weight="700" font-size="32" fill="#56f4e5">D_</text>
+</svg>
