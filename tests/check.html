@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepDreamer browser checks</title>
+<style>body{margin:16px;font:15px system-ui;background:#ececf2;color:#151522}#status{white-space:pre-wrap}iframe{display:block;border:1px solid #999;margin-top:16px;max-width:none}body.preview{margin:0}body.preview #status{display:none}body.preview iframe{margin:0;border:0}</style>
+<h1 id="status">正在检查…</h1><iframe title="实际产品页面"></iframe>
+<script>
+const frame=document.querySelector('iframe'),status=document.querySelector('#status'),params=new URLSearchParams(location.search),pages=['index','lecturer','finance','teams','explorations'],errors=[];let passed=0;
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function assert(value,message){if(!value)throw Error(message);passed++}
+window.addEventListener('message',e=>{if(e.source===frame.contentWindow&&e.data?.checkError)errors.push(e.data.checkError)});
+async function load(page,width,height){
+ frame.style.width=width+'px';frame.style.height=height+'px';
+ const response=await fetch('../'+page+'.html');if(!response.ok)throw Error('页面无法读取 '+page);
+ const capture='<base href="'+new URL('../',location.href).href+'"><script>addEventListener("error",e=>parent.postMessage({checkError:e.message||"资源加载错误: "+(e.target.src||e.target.href)},"*"),true);addEventListener("unhandledrejection",e=>parent.postMessage({checkError:String(e.reason)},"*"));<\/script>';
+ const loaded=new Promise(resolve=>frame.onload=resolve);
+ frame.srcdoc=(await response.text()).replace('<head>','<head>'+capture);await loaded;await wait(220);
+ return frame.contentDocument;
+}
+function overflow(doc,page,width){
+ const viewport=doc.defaultView.innerWidth;
+ assert(doc.documentElement.scrollWidth<=viewport+1,`${page} ${width}: 页面横向溢出`);
+ const header=doc.querySelector('.site-header').getBoundingClientRect();
+ assert(header.left>=-1&&header.right<=viewport+1,`${page} ${width}: 导航超出页面`);
+ const hero=doc.querySelector('h1').getBoundingClientRect();
+ assert(hero.left>=-1&&hero.right<=viewport+1,`${page} ${width}: 标题超出页面`);
+ for(const link of doc.querySelectorAll('.product-nav a')){
+  const box=link.getBoundingClientRect();assert(box.width>0&&box.height>0,`${page}: 导航入口不可见`);
+ }
+}
+function click(doc,selector){const element=doc.querySelector(selector);assert(element,`缺少 ${selector}`);element.click();return element}
+async function interactions(doc,page,width){
+ const win=doc.defaultView;
+ if(page==='finance'){
+  for(const [example,amount] of [['coffee','28'],['salary','500'],['parking','112']]){
+   click(doc,`[data-example="${example}"]`);
+   assert(doc.querySelector('#receipt-amount').textContent.includes(amount),'记账金额应跟随示例');
+   assert(doc.querySelector('#receipt-state').textContent.includes('尚未'),'切换示例必须重置确认状态');
+   const confirm=click(doc,'#finance-confirm');
+   assert(doc.querySelector('#receipt-type').textContent==='已确认','确认应更新状态');
+   assert(confirm.classList.contains('done'),'确认后应显示完成状态');
+   const confirmed=doc.querySelector('#finance').textContent;confirm.click();
+   assert(doc.querySelector('#finance').textContent===confirmed,'重复确认应保持幂等');
+   click(doc,'[data-replay]');
+   assert(!doc.querySelector('#finance-confirm').classList.contains('done'),'重新开始应恢复确认');
+  }
+ }
+ if(page==='lecturer'){
+  const initial=doc.querySelector('#lesson-dialog').textContent;
+  for(const action of ['answer','reason','stuck']){
+   click(doc,`[data-action="${action}"]`);
+   assert(doc.querySelector('#lesson-dialog').textContent!==initial,`${action}: 应给出回应`);
+   assert(doc.querySelectorAll('#lesson-dialog .msg').length>=3,`${action}: 保留学生回答与追问`);
+   assert(doc.querySelector('#lesson-options button'),'回应后应提供下一步入口');
+   const explanation=doc.querySelector('#lesson-options button:not([data-action="hint"])');explanation.click();
+   assert(doc.querySelector('#lesson-stage-label').textContent==='已有表达证据',`${action}: 补充解释后应记录表达证据`);
+   click(doc,'[data-action="reset"]');
+   assert(doc.querySelector('#lesson-dialog').textContent===initial,'轮内重置应清除记录');
+   click(doc,`[data-action="${action}"]`);
+   click(doc,'[data-action="hint"]');
+   assert(doc.querySelector('#lesson-stage-label').textContent==='保持练习','提示后不应宣称掌握');
+   assert(doc.querySelector('[data-action="reset"]'),'提示后应保留重新试讲入口');
+   click(doc,'[data-replay]');
+   assert(doc.querySelector('#lesson-dialog').textContent===initial,'重新开始应清除试讲记录');
+   assert(doc.querySelectorAll('#lesson-options [data-action]').length===3,'重新开始应恢复三种回答');
+  }
+  const answer=doc.querySelector('[data-action="answer"]');answer.focus();answer.click();
+  const nextChoice=doc.querySelector('#lesson-options button'),nextFocused=doc.activeElement===nextChoice;nextChoice.click();
+  const reset=doc.querySelector('[data-action="reset"]');reset.focus();reset.click();
+  const resetFocused=doc.activeElement===doc.querySelector('#lesson-options button');
+  const replay=doc.querySelector('[data-replay]');replay.focus();replay.click();
+  assert(nextFocused&&resetFocused&&doc.activeElement===replay,'讲师键盘焦点：替换回答后跟随下一步，顶部重播保留原焦点');
+ }
+ if(page==='teams'){
+  const clip=doc.querySelector('.gallery-clip'),cards=[...doc.querySelectorAll('.stage-card')];
+  for(let i=0;i<5;i++){
+   click(doc,`.team-step[data-step="${i}"]`);await wait(750);
+   const c=clip.getBoundingClientRect(),b=cards[i].getBoundingClientRect(),last=cards[i].querySelector('.evidence-row:last-child').getBoundingClientRect();
+   assert(b.left>=c.left-2&&b.right<=c.right+2,`teams ${width}: 阶段 ${i+1} 左右不完整`);
+   assert(last.bottom<=c.bottom+1&&last.bottom<=b.bottom+1,`teams ${width}: 阶段 ${i+1} 最后一行被截断`);
+   assert(doc.querySelector(`.team-step[data-step="${i}"]`).getAttribute('aria-pressed')==='true',`阶段 ${i+1}: 导航不同步`);
+   assert(doc.querySelectorAll('.team-step[aria-pressed="true"]').length===1,'只有一个阶段可激活');
+  }
+  clip.scrollTo({left:0,behavior:'instant'});await wait(200);
+  assert(doc.querySelector('.team-step[data-step="0"]').getAttribute('aria-pressed')==='true','横向手动滚动后导航应同步');
+ }
+ const toggle=doc.querySelector('[data-theme]');
+ const before=doc.documentElement.classList.contains('theme-day');toggle.click();await wait(50);
+ assert(doc.documentElement.classList.contains('theme-day')!==before,`${page}: 主题未切换`);
+ overflow(doc,page,width);
+}
+(async()=>{
+ if(params.has('preview')){
+  const page=params.get('preview');if(!pages.includes(page))throw Error('未知 preview 页面');
+  document.body.className='preview';await load(page,Number(params.get('width'))||1440,Number(params.get('height'))||900);return;
+ }
+ for(const [width,height] of [[1440,900],[1024,600],[375,812]])for(const page of pages){
+  status.textContent=`正在检查 ${page} ${width}×${height}；${passed} 项已通过`;
+  const doc=await load(page,width,height);overflow(doc,page,width);await interactions(doc,page,width);
+ }
+ assert(!errors.length,'运行时错误: '+errors.join('\n'));
+ document.title='PASS · DeepDreamer browser checks';document.body.dataset.result='passed';
+ status.textContent=`全部 ${passed} 项通过。\n5 页 × 3 个视口；固定演示、重置、画廊完整性、主题与横向溢出检查。`;
+})().catch(error=>{status.textContent=`检查失败：${error.message}\n${passed} 项已通过。`;document.title='FAIL · DeepDreamer browser checks';document.body.dataset.result='failed'});
+</script>
+</html>
