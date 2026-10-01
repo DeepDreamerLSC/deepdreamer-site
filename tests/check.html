@@ -28,6 +28,9 @@ function overflow(doc,page,width){
  for(const link of doc.querySelectorAll('.product-nav a')){
   const box=link.getBoundingClientRect();assert(box.width>0&&box.height>0,`${page}: 导航入口不可见`);
  }
+ for(const element of doc.querySelectorAll('.case-section,.sample-grid,.sample-output')){
+  if(element.getClientRects().length&&element.clientWidth)assert(element.scrollWidth<=element.clientWidth+1,`${page} ${width}: ${element.className} 局部横向溢出`);
+ }
 }
 function click(doc,selector){const element=doc.querySelector(selector);assert(element,`缺少 ${selector}`);element.click();return element}
 async function interactions(doc,page,width){
@@ -48,29 +51,39 @@ async function interactions(doc,page,width){
  }
  if(page==='lecturer'){
   const initial=doc.querySelector('#lesson-dialog').textContent;
-  for(const action of ['answer','reason','stuck']){
-   click(doc,`[data-action="${action}"]`);
+  function choose(action){
+   const button=doc.querySelector(`#lesson-options [data-action="${action}"]`);assert(button,`缺少讲师选项 ${action}`);button.focus();button.click();
+   assert(doc.activeElement===doc.querySelector('#lesson-options button'),`${action}: 替换回答后应保留键盘操作连续性`);
+  }
+  function summary(label){
+   const record=doc.querySelector('#lesson-summary');assert(record&&!record.hidden&&win.getComputedStyle(record).display!=='none','结束后应展示讲解记录');
+   assert(doc.querySelector('#lesson-stage-label').textContent===label,'讲解记录应如实区分复讲和仍需练习');
+   const spoken=[...doc.querySelectorAll('#lesson-dialog .msg.student')].map(item=>item.textContent),evidence=[...doc.querySelectorAll('#lesson-evidence li')].map(item=>item.textContent);
+   assert(JSON.stringify(evidence)===JSON.stringify(spoken),'讲解记录只应逐条保存当前学生实际表达');
+   assert(!/(?:你|这说明你)(?:已经|已|完全)掌握|你已经完整讲清楚/.test(record.textContent),'短演示不能保证学生掌握或完整讲清楚');
+  }
+  for(const [action,explanation] of [['answer','because'],['reason','meaning'],['stuck','six']]){
+   choose(action);
    assert(doc.querySelector('#lesson-dialog').textContent!==initial,`${action}: 应给出回应`);
    assert(doc.querySelectorAll('#lesson-dialog .msg').length>=3,`${action}: 保留学生回答与追问`);
-   assert(doc.querySelector('#lesson-options button'),'回应后应提供下一步入口');
-   const explanation=doc.querySelector('#lesson-options button:not([data-action="hint"])');explanation.click();
-   assert(doc.querySelector('#lesson-stage-label').textContent==='已有表达证据',`${action}: 补充解释后应记录表达证据`);
-   click(doc,'[data-action="reset"]');
+   choose(explanation);
+   assert(doc.querySelector('[data-action="recap"]')&&doc.querySelector('[data-action="pause"]'),'补充解释后应提供完整复讲和暂停入口');
+   choose('recap');summary('本次讲解记录');
+   choose('reset');
    assert(doc.querySelector('#lesson-dialog').textContent===initial,'轮内重置应清除记录');
-   click(doc,`[data-action="${action}"]`);
-   click(doc,'[data-action="hint"]');
-   assert(doc.querySelector('#lesson-stage-label').textContent==='保持练习','提示后不应宣称掌握');
-   assert(doc.querySelector('[data-action="reset"]'),'提示后应保留重新试讲入口');
-   click(doc,'[data-replay]');
+   assert(doc.querySelector('#lesson-summary').hidden,'重新试讲应隐藏旧讲解记录');
+   choose(action);choose('hint');
+   assert(doc.querySelector('[data-action="because"]')&&doc.querySelector('[data-action="pause"]'),'更小提示后应允许继续解释或暂停');
+   choose('pause');summary('仍需练习');
+   const replay=doc.querySelector('[data-replay]');replay.focus();replay.click();
+   assert(doc.activeElement===replay,'顶部重播应保留原键盘焦点');
    assert(doc.querySelector('#lesson-dialog').textContent===initial,'重新开始应清除试讲记录');
    assert(doc.querySelectorAll('#lesson-options [data-action]').length===3,'重新开始应恢复三种回答');
+   assert(doc.querySelector('#lesson-summary').hidden,'顶部重播应隐藏旧讲解记录');
   }
-  const answer=doc.querySelector('[data-action="answer"]');answer.focus();answer.click();
-  const nextChoice=doc.querySelector('#lesson-options button'),nextFocused=doc.activeElement===nextChoice;nextChoice.click();
-  const reset=doc.querySelector('[data-action="reset"]');reset.focus();reset.click();
-  const resetFocused=doc.activeElement===doc.querySelector('#lesson-options button');
-  const replay=doc.querySelector('[data-replay]');replay.focus();replay.click();
-  assert(nextFocused&&resetFocused&&doc.activeElement===replay,'讲师键盘焦点：替换回答后跟随下一步，顶部重播保留原焦点');
+  for(const [actions,label] of [[['stuck','hint','because','recap'],'本次讲解记录'],[['answer','because','pause'],'仍需练习']]){
+   actions.forEach(choose);summary(label);choose('reset');
+  }
  }
  if(page==='teams'){
   const clip=doc.querySelector('.gallery-clip'),cards=[...doc.querySelectorAll('.stage-card')];
@@ -84,6 +97,10 @@ async function interactions(doc,page,width){
   }
   clip.scrollTo({left:0,behavior:'instant'});await wait(200);
   assert(doc.querySelector('.team-step[data-step="0"]').getAttribute('aria-pressed')==='true','横向手动滚动后导航应同步');
+ }
+ for(const details of doc.querySelectorAll('.case-section details,.sample-grid details,details.sample-output,details.sample-detail')){
+  if(!details.open)details.querySelector('summary').click();
+  assert(details.open,`${page}: 样例详情应能够展开`);
  }
  const toggle=doc.querySelector('[data-theme]');
  const before=doc.documentElement.classList.contains('theme-day');toggle.click();await wait(50);
