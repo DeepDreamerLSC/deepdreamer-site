@@ -15,20 +15,71 @@
 
 (() => {
   'use strict';
-    const $=id=>document.getElementById(id);
-    const lesson=$('lesson-dialog'), lessonOptions=$('lesson-options');
-    if (!lesson || !lessonOptions) return;
-    let lessonStage=0;
-    const appendMessage=(type,html)=>{const node=document.createElement('div');node.className='msg '+type;node.innerHTML=html;lesson.appendChild(node);};
-    const setLesson=(stage,label,buttons)=>{
-        const restoreFocus=lessonOptions.contains(document.activeElement);
-        lessonStage=stage;$('lesson-stage-label').textContent=label;$('lesson-progress').style.width=(stage===0?20:stage===1?55:100)+'%';
-        lessonOptions.innerHTML='<div class="option-heading">'+(stage===2?'这一轮先到这里':'点选一句，继续试讲 ↓')+'</div>'+buttons.map(b=>'<button data-action="'+b.action+'"'+(b.reset?' class="reset"':'')+'>'+b.text+'</button>').join('');
-        if(restoreFocus)lessonOptions.querySelector('button')?.focus();
-    };
-    const resetLesson=()=>{lesson.innerHTML='<div class="msg ai">如果你要把这道题讲给同学听，<b>你会先说什么？</b></div>';setLesson(0,'从你的想法开始',[{action:'answer',text:'每组 8 支。'},{action:'reason',text:'因为 48 支要平均分成 6 组，所以用 48 除以 6。'},{action:'stuck',text:'我知道要算，但不知道怎么讲。'}])};
-    lessonOptions.addEventListener('click',event=>{const button=event.target.closest('button[data-action]');if(!button)return;const action=button.dataset.action;if(action==='reset'){resetLesson();return}if(lessonStage===0){if(action==='answer'){appendMessage('student','每组 8 支。');appendMessage('ai','你得到了结果。<b>为什么这里要用除法？</b>试着说说“平均分”和 6 组的关系。');setLesson(1,'再讲出为什么',[{action:'because',text:'因为 48 支平均分成 6 组，每组要一样多。'},{action:'hint',text:'请给我一点提示。'}])}else if(action==='reason'){appendMessage('student','因为 48 支要平均分成 6 组，所以用 48 除以 6。');appendMessage('ai','你讲出了用除法的理由。<b>那 48 ÷ 6 = 8 中的 8 代表什么？</b>');setLesson(1,'解释结果的意义',[{action:'meaning',text:'8 表示每一组有 8 支铅笔。'},{action:'hint',text:'我还不太确定。'}])}else{appendMessage('student','我知道要算，但不知道怎么讲。');appendMessage('ai','我们先只说第一步：<b>题目要把 48 支铅笔分成几组？</b>');setLesson(1,'从第一步说起',[{action:'six',text:'分成 6 组，而且每组一样多。'},{action:'hint',text:'还是需要一点提示。'}])}}else if(lessonStage===1){if(action==='hint'){appendMessage('student','我还需要一点提示。');appendMessage('ai','提示：先说清楚“总数”和“分成几组”，再说每组应当一样多。你可以重新组织一遍。');setLesson(2,'保持练习',[{action:'reset',text:'换一种回答，再试一次 ↺',reset:true}])}else{appendMessage('student',button.textContent);appendMessage('ai','这一次你补上了关键的数量关系。<b>我们听到了你的解释，</b>但仍需要结合完整讲题过程判断是否真的讲清楚。');setLesson(2,'已有表达证据',[{action:'reset',text:'重新开始试讲 ↺',reset:true}])}lesson.scrollTop=lesson.scrollHeight}});
-
-    document.querySelector('#teaching [data-replay]')?.addEventListener('click', resetLesson);
-    resetLesson();
+  const $ = id => document.getElementById(id);
+  const lesson = $('lesson-dialog'), options = $('lesson-options'), summary = $('lesson-summary');
+  if (!lesson || !options || !summary) return;
+  let stage = 0;
+  function message(type, html) {
+    const node = document.createElement('div');
+    node.className = 'msg ' + type;
+    node.innerHTML = html;
+    lesson.appendChild(node);
+    lesson.scrollTop = lesson.scrollHeight;
+  }
+  function setStage(next, label, choices) {
+    const restoreFocus = options.contains(document.activeElement);
+    stage = next;
+    $('lesson-stage-label').textContent = label;
+    $('lesson-progress').style.width = [15, 40, 70, 100][next] + '%';
+    options.innerHTML = '<div class="option-heading">' + (next === 3 ? '这一轮留下了什么' : '点选一句，继续试讲 ↓') + '</div>' + choices.map(choice => '<button data-action="' + choice.action + '">' + choice.text + '</button>').join('');
+    if (restoreFocus) options.querySelector('button')?.focus();
+  }
+  function finish(complete) {
+    message('ai', complete ? '你把数量关系和结果的意义连起来了。<b>我们把你这次的表达留下来。</b>下一次，试着换一道题独立讲解。' : '今天先到这里。<b>我们记录你已经说出的部分，</b>下一次继续把理由讲出来。');
+    const evidence = [...lesson.querySelectorAll('.msg.student')].map(node => {
+      const item = document.createElement('li');
+      item.textContent = node.textContent;
+      return item;
+    });
+    $('lesson-evidence').replaceChildren(...evidence);
+    $('lesson-next').textContent = complete ? '下一步：换一道题，练习独立解释。这个短示例不代表已经掌握。' : '下一步：继续说明为什么用除法，以及结果表示什么。';
+    summary.hidden = false;
+    setStage(3, complete ? '本次讲解记录' : '仍需练习', [{action: 'reset', text: '重新开始试讲 ↺'}]);
+  }
+  function reset() {
+    lesson.innerHTML = '<div class="msg ai">如果你要把这道题讲给同学听，<b>你会先说什么？</b></div>';
+    summary.hidden = true;
+    $('lesson-evidence').replaceChildren();
+    setStage(0, '从你的想法开始', [
+      {action: 'answer', text: '每组 8 支。'},
+      {action: 'reason', text: '因为 48 支要平均分成 6 组，所以用 48 除以 6。'},
+      {action: 'stuck', text: '我知道要算，但不知道怎么讲。'}
+    ]);
+  }
+  options.addEventListener('click', event => {
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
+    const action = button.dataset.action;
+    if (action === 'reset') { reset(); return; }
+    message('student', button.textContent);
+    if (action === 'pause') { finish(false); return; }
+    if (action === 'hint') {
+      message('ai', '我们先缩小一步：<b>总共有多少支，要平均分成几组？</b>把这两个数和“每组一样多”连起来说。');
+      setStage(1, '先讲清数量关系', [{action: 'because', text: '48 支平均分成 6 组，每组一样多，所以用除法。'}, {action: 'pause', text: '这次先停在这里。'}]);
+    } else if (stage === 0) {
+      const prompts = {
+        answer: ['你得到了结果。<b>为什么这里要用除法？</b>', 'because', '因为 48 支平均分成 6 组，每组要一样多。'],
+        reason: ['你说出了运算理由。<b>算出的 8，代表什么？</b>', 'meaning', '8 表示每一组有 8 支铅笔。'],
+        stuck: ['先只讲第一步：<b>题目要分成几组，每组有什么要求？</b>', 'six', '分成 6 组，而且每组一样多。']
+      };
+      const [prompt, next, text] = prompts[action];
+      message('ai', prompt);
+      setStage(1, '补上关键理由', [{action: next, text}, {action: 'hint', text: '请给我一点提示。'}]);
+    } else if (stage === 1) {
+      message('ai', '现在试着连起来：<b>为什么用除法、怎样计算、结果表示什么？</b>把这道题讲给同学听。');
+      setStage(2, '把思路连起来', [{action: 'recap', text: '48 支平均分成 6 组，要算每组有多少，所以用 48 ÷ 6 = 8。8 表示每组有 8 支铅笔。'}, {action: 'pause', text: '我还没办法完整讲出来，这次先停。'}]);
+    } else if (stage === 2 && action === 'recap') finish(true);
+  });
+  document.querySelector('#teaching [data-replay]')?.addEventListener('click', reset);
+  reset();
 })();
